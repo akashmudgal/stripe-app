@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Script Executor</title>
+</head>
+<body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{message}}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <h1>Script Executor</h1>
+    {% if running %}
+        <form method="GET" action="/stop">
+            <h3>Script is already running. Click below button to stop.</h3>
+            <input type="submit" value="Stop Script Execution">
+        </form>
+    {% else %}
+        <form method="POST" action="/">
+            <label for="start_time">Start Time:</label>
+            <input type="datetime-local" name="start_time" required><br><br>
+
+            <label for="time_intervals_random">Random Time Intervals:</label>
+            <input type="checkbox" name="time_intervals_random" value="off"><br><br>
+
+            <div class="random_time_range" style="display: none">
+                <label>Range for Random time interval (minutes):</label><br>
+                <label for="time_range_start">Start: </label>
+                <input type="number" name="time_range_start" min="1" value="1">
+                <label for="time_range_end">End: </label>
+                <input type="number" name="time_range_end" min="1" value="1">
+                <br><br>
+            </div>
+
+            <div class="fixed_time_interval">
+                <label for="time_interval">Time Interval between each payment (minutes):</label>
+                <input type="number" name="time_interval" min="1" value="10" required><br><br>
+            </div>
+
+
+            <label>Range for Amount:</label><br><br>
+            <label for="amount_range_start">Start: </label>
+            <input type="number" name="amount_range_start" min="50" value="50">
+            <label for="amount_range_end">End: </label>
+            <input type="number" name="amount_range_end" min="50" value="1000">
+            <br><br>
+
+            <input type="submit" value="Start Script Execution">
+        </form>
+    {% endif %}
+    <script>
+        //Check if random time intervals checkbox is visible, and show further fields accordingly
+        const isRandom=document.querySelector('input[name="time_intervals_random"]');
+        const randomIntervalRange=document.querySelector('div.random_time_range');
+        const timeIntervalInput=document.querySelector('div.fixed_time_interval');
+
+        isRandom.addEventListener("click",function(){
+            if(isRandom.checked == true){
+                isRandom.value="on"
+                timeIntervalInput.style.display="none";
+                randomIntervalRange.style.display="inline";
+            }
+            else{
+                isRandom.value="off"
+                timeIntervalInput.style.display="inline";
+                randomIntervalRange.style.display="none";
+            }
+        })
+
+    </script>
+</body>
+</html>

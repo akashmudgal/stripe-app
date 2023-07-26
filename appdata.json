@@ -1,0 +1,28 @@
+{
+    "payment_url": "https://buy.stripe.com/test_14k3fVe4tcraeTS003",
+
+    "cards": [
+        {
+            "number": "4242424242424242",
+            "expiry_date" : "05/50",
+            "cvc": "123"
+        },
+        {
+            "number": "5555555555554444",
+            "expiry_date" : "05/50",
+            "cvc": "123"
+        },
+        {
+            "number": "5200828282828210",
+            "expiry_date" : "05/50",
+            "cvc": "1234"
+        }
+    ],
+
+    "form_data": {
+        "username" : "James Howard",
+        "country": "United States",
+        "zipcode": "75791",
+        "email": "hellojames@example.com"
+    }
+}
