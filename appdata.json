@@ -19,9 +19,9 @@
         }
     ],
 
-    "form_data": {
-        "username" : "James Howard",
-        "country": "United States",
+    "user_data": {
+        "name" : "James Howard",
+        "country": "US",
         "zipcode": "75791",
         "email": "hellojames@example.com"
     }

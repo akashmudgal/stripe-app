@@ -1,23 +1,7 @@
 import json
 import random
 import logging
-import time
-from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chromium.service import ChromiumService
-filename="selenium.log"
-
-#initialize the logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename=filename,
-    format='[%(asctime)s][%(levelname)s] - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+import requests
 
 #get the details from json file
 parsed_details=json.load(open('appdata.json'))
@@ -29,48 +13,97 @@ url=parsed_details['payment_url']
 cards=parsed_details['cards']
 
 #user data to be filled
-form_data=parsed_details['form_data']
+user_data=parsed_details['user_data']
 
 
-def make_payment(amount: str) -> bool:
-    service=ChromiumService('/home/ubuntu/MyProjects/stripe-app/chromium.chromedriver')
-    options=webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    driver=webdriver.Chrome(service=service,options=options)
-    driver.maximize_window()
-    driver.implicitly_wait(10)
+#The API Key
+key="pk_test_51MhExUAebRllQQxLbT9xHAoMyNqqIFMgfpzIZsCPt8NbMkh2PZOuhPmf5mfPG8ep7PLPXMvgQP4XMyVkvVZucsIl0008OoO8jF"
 
-    driver.get(url)
-    amount_el=driver.find_element(By.CSS_SELECTOR,'input[name="customUnitAmount"]')
-    amount_el.send_keys(amount)
-    email_input=driver.find_element(By.ID,'email')
-    email_input.send_keys(form_data['email'])
+
+#The common headers
+#common headers
+headers = {
+    'authority': 'api.stripe.com',
+    'accept': 'application/json',
+    'accept-language': 'en-US,en;q=0.9',
+    'content-type': 'application/x-www-form-urlencoded',
+    'origin': 'https://checkout.stripe.com',
+    'referer': 'https://checkout.stripe.com/',
+}
+
+def create_payment_method(cards,user_data):
+    #Select a card at random
     card=random.choice(cards)
 
-    card_number_input=driver.find_element(By.ID,'cardNumber')
-    card_number_input.send_keys(card['number'])
+    #the url for request
+    url = 'https://api.stripe.com/v1/payment_methods'
 
-    expiry_date_input=driver.find_element(By.ID,'cardExpiry')
-    expiry_date_input.send_keys(card['expiry_date'])
+    data = {
+    'type': 'card',
+    'card[number]': card['number'],
+    'card[cvc]': card['cvc'],
+    'card[exp_month]': card['expiry_date'].split("/")[0],
+    'card[exp_year]': card['expiry_date'].split("/")[1],
+    'billing_details[name]': user_data['name'],
+    'billing_details[email]': user_data['email'],
+    'billing_details[address][country]': user_data['country'],
+    'billing_details[address][postal_code]': user_data['zipcode'],
+    'key': key,
+    'payment_user_agent': 'stripe.js/5fafadf87b; stripe-js-v3/5fafadf87b; payment-link; checkout'
+    }
 
-    cvc_input=driver.find_element(By.ID,'cardCvc')
-    cvc_input.send_keys(card['cvc'])
+    response=requests.post(url=url,headers=headers,data=data).json()
 
-    billing_name_input=driver.find_element(By.ID,'billingName')
-    billing_name_input.send_keys(form_data['username'])
+    return response['id']
 
-    billing_country=driver.find_element(By.ID,'billingCountry')
-    options=Select(billing_country)
-    options.select_by_visible_text(form_data['country'])
+def create_payment_session(url: str,amount: str):
+    #get the payment link
+    response=requests.get(url)
+    plink_url=response.url
 
-    zip_input=driver.find_element(By.ID,'billingPostalCode')
-    zip_input.send_keys(form_data['zipcode'])
+    # create the payment session
+    plink=plink_url.rsplit("/",1)[1].split('#')[0]
 
-    submit_button=WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"button[type='submit']")))
-    driver.execute_script("arguments[0].click();", submit_button)
+    data={
+        "key": key,
+        "payment_link": plink
+    }
+    url='https://api.stripe.com/v1/payment_pages/for_plink'
 
-    time.sleep(5)
-    driver.save_screenshot(f'payment_status-{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}.png')
-    print(f"Made a payment of amount {amount}")
-    driver.quit()
+    payment_page_response = requests.post(url, headers=headers, data=data).json()
+
+    #update payment session to expect set payment amount
+    data={
+        'key': key,
+        'updated_line_item_amount[line_item_id]': payment_page_response['line_item_group']['line_items'][0]['id'],
+        'updated_line_item_amount[unit_amount]': amount+'00'
+    }
+
+    response=requests.post(f'https://api.stripe.com/v1/payment_pages/{payment_page_response["session_id"]}',headers=headers,data=data)
+    
+    return payment_page_response['session_id']
+
+def make_payment(amount: str) -> bool:
+    #create the payment method and get id
+    payment_method_id=create_payment_method(cards,user_data)
+
+    #create the payment session and get session_id
+    session_id=create_payment_session(url,amount)
+
+    # make the payment API call
+    #Make the payment
+    payment_url=f'https://api.stripe.com/v1/payment_pages/{session_id}/confirm'
+    data = {
+        'eid': 'NA',
+        'payment_method': payment_method_id,
+        'expected_amount': amount+'00',
+        'expected_payment_method_type': 'card',
+        'key': key,
+    }
+
+    response = requests.post(payment_url, headers=headers, data=data)
+
+    if response.status_code == 200:
+        logging.info(f'Payment succeeded! Amount: {amount}')
+    else:
+        logging.error(f'The API call for payment failed.')

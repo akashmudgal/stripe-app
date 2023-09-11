@@ -20,7 +20,7 @@
             <input type="submit" value="Stop Script Execution">
         </form>
     {% else %}
-        <form method="POST" action="/">
+        <form method="POST" action="/" id="inputform">
             <label for="start_time">Start Time:</label>
             <input type="datetime-local" name="start_time" required><br><br>
 
@@ -49,28 +49,27 @@
             <input type="number" name="amount_range_end" min="50" value="1000">
             <br><br>
 
-            <input type="submit" value="Start Script Execution">
+            <input type="submit" value="Start Script Execution" onsubmit="submitForm()">
         </form>
+        <script>
+            //Check if random time intervals checkbox is visible, and show further fields accordingly
+            const isRandom=document.querySelector('input[name="time_intervals_random"]');
+            const randomIntervalRange=document.querySelector('div.random_time_range');
+            const timeIntervalInput=document.querySelector('div.fixed_time_interval');
+            if(isRandom){}
+            isRandom.addEventListener("click",function(){
+                if(isRandom.checked == true){
+                    isRandom.value="on"
+                    timeIntervalInput.style.display="none";
+                    randomIntervalRange.style.display="inline";
+                }
+                else{
+                    isRandom.value="off"
+                    timeIntervalInput.style.display="inline";
+                    randomIntervalRange.style.display="none";
+                }
+            });
+        </script>
     {% endif %}
-    <script>
-        //Check if random time intervals checkbox is visible, and show further fields accordingly
-        const isRandom=document.querySelector('input[name="time_intervals_random"]');
-        const randomIntervalRange=document.querySelector('div.random_time_range');
-        const timeIntervalInput=document.querySelector('div.fixed_time_interval');
-
-        isRandom.addEventListener("click",function(){
-            if(isRandom.checked == true){
-                isRandom.value="on"
-                timeIntervalInput.style.display="none";
-                randomIntervalRange.style.display="inline";
-            }
-            else{
-                isRandom.value="off"
-                timeIntervalInput.style.display="inline";
-                randomIntervalRange.style.display="none";
-            }
-        })
-
-    </script>
 </body>
 </html>
