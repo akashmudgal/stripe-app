@@ -119,16 +119,17 @@ def index():
             start_time = time.strptime(start_time, "%Y-%m-%dT%H:%M")
             start_time = time.mktime(start_time)
 
-            if is_execution_time_valid(start_time):
-                # Create a separate thread to execute the script
-                script_process=Process(target=execute_script,args=(start_time, amount_range, fixed_interval, random_intervals_range))
-                script_process.start()
-                #write process pid to file
-                write_stream=open('pid','w')
-                pid=str(script_process.pid)
-                write_stream.write(str(script_process.pid))
-            else:
-                flash("The start time must be in working hours (7:00 AM to 7:00 PM)")
+            if random_intervals_range:
+                if not is_execution_time_valid(start_time):
+                    flash("The start time must be in working hours (7:00 AM to 7:00 PM)")
+                    return render_template("form.html", running=False)
+            # Create a separate thread to execute the script
+            script_process=Process(target=execute_script,args=(start_time, amount_range, fixed_interval, random_intervals_range))
+            script_process.start()
+            #write process pid to file
+            write_stream=open('pid','w')
+            pid=str(script_process.pid)
+            write_stream.write(str(script_process.pid))
         except Exception as e:
             write_stream=open('pid','w')
             flash(f"An error occured while scheduling script. Please try again. {e}")
