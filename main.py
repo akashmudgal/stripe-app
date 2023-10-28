@@ -3,7 +3,7 @@ from multiprocessing import Process,Queue
 import time
 import random
 import subprocess
-from datetime import datetime
+from datetime import datetime,timedelta
 from script import make_payment
 import logging
 app = Flask(__name__)
@@ -75,7 +75,7 @@ def execute_script(execution_time, amount_range,fixed_time_interval=None, random
             #delay in next payment(seconds)
             delay=time_interval
 
-            if next_execution_time > max_start_time:
+            if random_intervals_range and next_execution_time > max_start_time:
                 #Get the difference
                 time_diff=next_execution_time - max_start_time
                 next_execution_time = min_start_time + 86400 + time_diff
