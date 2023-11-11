@@ -43,7 +43,7 @@ def is_execution_time_valid(execution_time: str) -> bool:
 
     return result
 
-def execute_script(execution_time, amount_range,fixed_time_interval=None, random_intervals_range=None):
+def execute_script(execution_time, amount_range,fixed_time_interval=None, random_intervals_range=None,run_in_working_hours=False):
     next_execution_time=execution_time
 
     while True:
@@ -75,7 +75,7 @@ def execute_script(execution_time, amount_range,fixed_time_interval=None, random
             #delay in next payment(seconds)
             delay=time_interval
 
-            if random_intervals_range and next_execution_time > max_start_time:
+            if run_in_working_hours and next_execution_time > max_start_time:
                 #Get the difference
                 time_diff=next_execution_time - max_start_time
                 next_execution_time = min_start_time + 86400 + time_diff
@@ -98,7 +98,7 @@ def index():
         try:
             start_time = request.form.get("start_time")
             is_time_random = request.form.get("time_intervals_random") == "on"
-
+            run_in_working_hours=request.form.get("working_hours_toggle") == "on"
             fixed_interval=None
             random_intervals_range=None
 
@@ -124,7 +124,7 @@ def index():
                     flash("The start time must be in working hours (7:00 AM to 7:00 PM)")
                     return render_template("form.html", running=False)
             # Create a separate thread to execute the script
-            script_process=Process(target=execute_script,args=(start_time, amount_range, fixed_interval, random_intervals_range))
+            script_process=Process(target=execute_script,args=(start_time, amount_range, fixed_interval, random_intervals_range,run_in_working_hours))
             script_process.start()
             #write process pid to file
             write_stream=open('pid','w')
