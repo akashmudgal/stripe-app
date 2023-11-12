@@ -119,7 +119,7 @@ def index():
             start_time = time.strptime(start_time, "%Y-%m-%dT%H:%M")
             start_time = time.mktime(start_time)
 
-            if random_intervals_range:
+            if run_in_working_hours:
                 if not is_execution_time_valid(start_time):
                     flash("The start time must be in working hours (7:00 AM to 7:00 PM)")
                     return render_template("form.html", running=False)
